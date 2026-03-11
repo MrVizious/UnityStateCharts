@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class StateChartTest : MonoBehaviour
 {
+    [SerializeField]
     private StateChart stateChart;
     void Start()
     {

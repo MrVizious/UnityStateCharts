@@ -1,5 +1,6 @@
 using System;
 using StateCharts;
+using UnityEngine;
 
 public class AtomicState : State
 {
@@ -28,6 +29,11 @@ public class AtomicState : State
         stateChart.RemoveActiveAtomicState(this);
         onExitAction?.Invoke();
         exited.Invoke();
+    }
+
+    public override void RequestActivationFromChild(State requestingState)
+    {
+        Debug.LogError($"Trying to request activation to {name} atomic state as if it were a parent state");
     }
     #endregion
 }

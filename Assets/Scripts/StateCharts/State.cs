@@ -85,6 +85,15 @@ namespace StateCharts
         #region Activation Methods
         public abstract void Activate();
         public abstract void Deactivate();
+        public void RequestActivation()
+        {
+            if (isActive) return;
+            if (parent != null)
+            {
+                parent.RequestActivationFromChild(this);
+            }
+        }
+        public abstract void RequestActivationFromChild(State requestingState);
         #endregion
     }
 }

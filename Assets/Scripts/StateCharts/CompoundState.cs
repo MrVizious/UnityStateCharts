@@ -77,5 +77,30 @@ public class CompoundState : State
         onEnterAction?.Invoke();
         exited.Invoke();
     }
+
+    public override void RequestActivationFromChild(State requestingState)
+    {
+        if (!IsAncestorOf(requestingState))
+        {
+            Debug.LogError($"Requesting activation from {requestingState.name} to {name} compound state, but the requesting state is not an ancestor of this compound state.");
+            return;
+        }
+        if (isActive)
+        {
+            ActivateChild(requestingState);
+            return;
+        }
+        parent.RequestActivationFromChild(this);
+    }
+
+    private void ActivateChild(State childToActivate)
+    {
+        foreach (State child in children)
+        {
+            if (child == childToActivate) child.Activate();
+            else child.Deactivate();
+        }
+    }
+
     #endregion
 }

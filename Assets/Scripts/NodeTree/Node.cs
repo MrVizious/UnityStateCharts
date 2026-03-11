@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace NodeTree
 {
+    [System.Serializable]
     public abstract class Node<T> where T : Node<T>
     {
         public virtual string name { get; protected set; }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using StateCharts;
+using UnityEngine;
 
 public class ParallelState : State
 {
@@ -59,6 +60,15 @@ public class ParallelState : State
         }
         onExitAction?.Invoke();
         exited.Invoke();
+    }
+
+    public override void RequestActivationFromChild(State requestingState)
+    {
+        if (isActive)
+        {
+            Debug.LogError($"Requesting activation from {requestingState.name} to {name} parallel state, but it's already active. Parallel states should not receive activation requests from their children since they activate all children at once.");
+        }
+        parent.RequestActivationFromChild(this);
     }
     #endregion
 }
