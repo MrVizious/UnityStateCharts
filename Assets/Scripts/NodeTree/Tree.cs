@@ -1,0 +1,60 @@
+using System;
+using System.Collections.Generic;
+
+namespace NodeTree
+{
+    public class Tree<T> where T : Node<T>
+    {
+        public T entryNode;
+        private Dictionary<(T, T), T> lcaCache = new();
+        public T LowestCommonAncestor(T a, T b)
+        {
+            if (a == null || b == null) return null;
+            (T, T) key = MakeKey(a, b);
+            T cachedLCA;
+            if (lcaCache.TryGetValue(key, out cachedLCA))
+            {
+                return cachedLCA;
+            }
+
+            HashSet<T> visited = new();
+
+            while (a != null || b != null)
+            {
+                if (a != null)
+                {
+                    if (!visited.Add(a))
+                    {
+                        lcaCache[key] = a; // Cache the result before returning
+                        return a;
+                    }
+                    a = a.parent;
+                }
+
+                if (b != null)
+                {
+                    if (!visited.Add(b))
+                    {
+                        lcaCache[key] = b; // Cache the result before returning
+                        return b;
+                    }
+                    b = b.parent;
+                }
+            }
+
+            return null;
+        }
+        private static (T, T) MakeKey(T a, T b)
+        {
+            int hashA = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(a);
+            int hashB = System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(b);
+
+            if (hashA != hashB)
+                return hashA < hashB ? (a, b) : (b, a);
+
+            // Tiebreaker: arbitrary but consistent within a session
+            return ReferenceEquals(a, b) ? (a, b) : (a.GetHashCode() <= b.GetHashCode() ? (a, b) : (b, a));
+        }
+    }
+
+}
