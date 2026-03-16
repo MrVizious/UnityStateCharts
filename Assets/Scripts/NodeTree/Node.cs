@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using UnityEngine;
+
 
 namespace NodeTree
 {
@@ -7,41 +9,64 @@ namespace NodeTree
     {
         public virtual string name { get; protected set; }
         public T parent { get; protected set; }
+        public Tree<T> tree { get; protected set; }
         public virtual HashSet<T> children { get; protected set; } = new();
         protected Dictionary<T, bool> isAncestorCache = new();
+        public virtual void SetTree(Tree<T> newTree)
+        {
+            tree = newTree;
+            foreach (T child in children)
+            {
+                child.SetTree(newTree);
+            }
+        }
         public bool SetParent(T newParent, bool forceChange = false)
         {
-            if (parent == null || forceChange)
-            {
-                parent = newParent;
-                return true;
-            }
-            return false;
-        }
+            if (parent != null && !forceChange) return false;
 
+            parent = newParent;
+            if (parent != null)
+            {
+                SetTree(newParent.tree);
+            }
+            else
+            {
+                SetTree(null);
+            }
+            return true;
+        }
         public virtual bool AddChild(T newChild)
         {
+            Debug.Log($"Trying to add child {newChild.name} to {name}");
             if (newChild == null)
             {
+                Debug.Log($"Child {newChild.name} NOT added because it is null");
                 return false;
             }
             if (newChild == this)
             {
+                Debug.Log($"Child {newChild.name} NOT added because it is the same as the parent");
                 return false;
             }
-            if (this.IsAncestorOf(newChild))
+            if (tree != null && tree.IsAncestorOf((T)this, newChild))
             {
+                Debug.Log($"Child {newChild.name} NOT added because it is an descendant of the parent {name}");
                 return false;
             }
-            if (newChild.IsAncestorOf((T)this))
+            if (tree != null && tree.IsAncestorOf(newChild, (T)this))
             {
+                Debug.Log($"Child {newChild.name} NOT added because it is an ancestor of the parent {name}");
                 return false;
             }
-            if (newChild.SetParent((T)this))
+            bool parentSet = newChild.SetParent((T)this);
+            Debug.Log($"Could set parent? {parentSet}");
+            if (parentSet)
             {
                 children.Add(newChild);
+                Debug.Log($"Added state {newChild.name}");
                 return true;
             }
+            Debug.Log($"Child {newChild.name} NOT added because ???");
             return false;
         }
         public virtual void AddChildren(IEnumerable<T> newChildren)
@@ -57,23 +82,8 @@ namespace NodeTree
             if (children.Remove(childToRemove))
             {
                 childToRemove.SetParent(null, true);
+                childToRemove.SetTree(null);
                 return true;
-            }
-            return false;
-        }
-
-        public virtual bool IsAncestorOf(T node)
-        {
-            foreach (T child in children)
-            {
-                if (child == node)
-                {
-                    return true;
-                }
-                if (child.IsAncestorOf(node))
-                {
-                    return true;
-                }
             }
             return false;
         }

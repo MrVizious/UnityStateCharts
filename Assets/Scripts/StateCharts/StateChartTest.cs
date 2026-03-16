@@ -8,9 +8,16 @@ public class StateChartTest : MonoBehaviour
     private StateChart stateChart;
     void Start()
     {
-        AtomicState stateA = new AtomicState("State A", stateChart: stateChart);
-        AtomicState stateB = new AtomicState("State B", stateChart: stateChart);
-        CompoundState rootState = new CompoundState("Root State", stateChart: stateChart, children: new HashSet<State> { stateA, stateB }, initialState: stateA);
+        CompoundState rootState = new CompoundState("Root State");
+        AtomicState stateA = new AtomicState("State A");
+        ParallelState stateB = new ParallelState("State B");
+        AtomicState stateC = new AtomicState("State C");
+        AtomicState stateD = new AtomicState("State D");
+        rootState.AddChild(stateA);
+        rootState.AddChild(stateB);
+        rootState.SetInitialState(stateB);
+        stateB.AddChild(stateC);
+        stateB.AddChild(stateD);
         stateChart = new StateChart(rootState);
         stateChart.Activate();
     }

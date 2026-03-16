@@ -7,7 +7,6 @@ public class AtomicState : State
     #region Child Management
     public override bool AddChild(State newChild) => false;
     public override bool RemoveChild(State node) => false;
-    public override bool IsAncestorOf(State node) => false;
     #endregion
 
     public AtomicState(string name = null, State parent = null, Action onEnterAction = null, Action onExitAction = null, StateChart stateChart = null)
@@ -18,7 +17,7 @@ public class AtomicState : State
     {
         if (isActive) return;
         isActive = true;
-        stateChart.AddActiveAtomicState(this);
+        stateChart?.AddActiveAtomicState(this);
         onEnterAction?.Invoke();
         entered.Invoke();
     }
@@ -26,7 +25,7 @@ public class AtomicState : State
     {
         if (!isActive) return;
         isActive = false;
-        stateChart.RemoveActiveAtomicState(this);
+        stateChart?.RemoveActiveAtomicState(this);
         onExitAction?.Invoke();
         exited.Invoke();
     }
@@ -34,6 +33,10 @@ public class AtomicState : State
     public override void RequestActivationFromChild(State requestingState)
     {
         Debug.LogError($"Trying to request activation to {name} atomic state as if it were a parent state");
+    }
+
+    public override void Update(float deltaTime)
+    {
     }
     #endregion
 }

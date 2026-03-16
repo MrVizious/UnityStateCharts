@@ -16,6 +16,7 @@ public class ParallelState : State
     }
     public override void Update(float deltaTime)
     {
+        Debug.Log($"Updating {name}");
         if (!isActive) return;
         foreach (var state in children)
         {

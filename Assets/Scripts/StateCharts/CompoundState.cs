@@ -6,18 +6,25 @@ using UnityEngine;
 public class CompoundState : State
 {
     public State initialState;
+    public State activeState;
 
     #region Constructors
     public CompoundState(string name = null, State parent = null, State initialState = null, HashSet<State> children = null, Action onEnterAction = null, Action onExitAction = null, StateChart stateChart = null)
         : base(name, parent, children, onEnterAction, onExitAction, stateChart)
     {
-        SetInitialState(initialState);
+        if (initialState != null)
+        {
+            AddChild(initialState);
+            SetInitialState(initialState);
+        }
     }
     #endregion
 
     public void AddInitialState(State initialState)
     {
-        AddChild(initialState);
+        Debug.Log($"Adding new state {initialState.name}");
+        bool success = AddChild(initialState);
+        Debug.Log($"Has succeded? {success}");
         SetInitialState(initialState);
     }
     public void SetInitialState(State state)
@@ -42,10 +49,7 @@ public class CompoundState : State
     public override void Update(float deltaTime)
     {
         if (!isActive) return;
-        foreach (var state in children)
-        {
-            state.Update(deltaTime);
-        }
+        activeState?.Update(deltaTime);
     }
     public override void LateUpdate(float deltaTime)
     {
@@ -64,7 +68,7 @@ public class CompoundState : State
         isActive = true;
         onEnterAction?.Invoke();
         entered.Invoke();
-        initialState.Activate();
+        ActivateChild(initialState);
     }
     public override void Deactivate()
     {
@@ -74,13 +78,14 @@ public class CompoundState : State
         {
             state.Deactivate();
         }
+        activeState = null;
         onEnterAction?.Invoke();
         exited.Invoke();
     }
 
     public override void RequestActivationFromChild(State requestingState)
     {
-        if (!IsAncestorOf(requestingState))
+        if (!stateChart.IsAncestorOf(this, requestingState))
         {
             Debug.LogError($"Requesting activation from {requestingState.name} to {name} compound state, but the requesting state is not an ancestor of this compound state.");
             return;
@@ -97,7 +102,11 @@ public class CompoundState : State
     {
         foreach (State child in children)
         {
-            if (child == childToActivate) child.Activate();
+            if (child == childToActivate)
+            {
+                child.Activate();
+                activeState = child;
+            }
             else child.Deactivate();
         }
     }

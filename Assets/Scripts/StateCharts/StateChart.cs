@@ -1,6 +1,7 @@
 using NodeTree;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace StateCharts
 {
@@ -27,11 +28,11 @@ namespace StateCharts
         {
             return activeAtomicStates.Remove(state);
         }
-        public StateChart(State entryState)
+        public StateChart(State entryState = null)
         {
             entryNode = entryState;
             if (entryNode == null) return;
-            entryState.stateChart = this;
+            entryNode.SetTree(this);
         }
         public void Activate()
         {

@@ -8,12 +8,13 @@ namespace NodeTree
     {
         public T entryNode;
         private Dictionary<(T, T), T> lcaCache = new();
+        private Dictionary<(T, T), bool> ancestryCache = new();
         public T LowestCommonAncestor(T a, T b)
         {
             if (a == null || b == null) return null;
-            (T, T) key = MakeKey(a, b);
+            (T, T) pair = MakeKey(a, b);
             T cachedLCA;
-            if (lcaCache.TryGetValue(key, out cachedLCA))
+            if (lcaCache.TryGetValue(pair, out cachedLCA))
             {
                 return cachedLCA;
             }
@@ -26,7 +27,7 @@ namespace NodeTree
                 {
                     if (!visited.Add(a))
                     {
-                        lcaCache[key] = a; // Cache the result before returning
+                        lcaCache[pair] = a; // Cache the result before returning
                         return a;
                     }
                     a = a.parent;
@@ -36,7 +37,7 @@ namespace NodeTree
                 {
                     if (!visited.Add(b))
                     {
-                        lcaCache[key] = b; // Cache the result before returning
+                        lcaCache[pair] = b; // Cache the result before returning
                         return b;
                     }
                     b = b.parent;
@@ -53,8 +54,26 @@ namespace NodeTree
             if (hashA != hashB)
                 return hashA < hashB ? (a, b) : (b, a);
 
-            // Tiebreaker: arbitrary but consistent within a session
             return ReferenceEquals(a, b) ? (a, b) : (a.GetHashCode() <= b.GetHashCode() ? (a, b) : (b, a));
+        }
+
+        public bool IsAncestorOf(T ancestor, T descendant)
+        {
+            if (ancestor == null || descendant == null) return false;
+            bool cachedResult;
+            if (ancestryCache.TryGetValue((ancestor, descendant), out cachedResult))
+            {
+                return cachedResult;
+            }
+
+            bool isDescendantParentAncestor = IsAncestorOf(ancestor, descendant.parent);
+            if (isDescendantParentAncestor)
+            {
+                ancestryCache[(ancestor, descendant)] = true;
+                return true;
+            }
+
+            return false;
         }
     }
 
