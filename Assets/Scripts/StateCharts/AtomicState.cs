@@ -4,14 +4,7 @@ using UnityEngine;
 
 public class AtomicState : State
 {
-    #region Child Management
-    public override bool AddChild(State newChild) => false;
-    public override bool RemoveChild(State node) => false;
-    #endregion
-
-    public AtomicState(string name = null, State parent = null, Action onEnterAction = null, Action onExitAction = null, StateChart stateChart = null)
-        : base(name, parent, onEnterAction: onEnterAction, onExitAction: onExitAction, stateChart: stateChart) { }
-
+    public AtomicState(string? name, Action onEnterAction = null, Action onExitAction = null) : base(name, onEnterAction, onExitAction) { }
     #region Activation Methods
     public override void Activate()
     {
@@ -21,6 +14,15 @@ public class AtomicState : State
         onEnterAction?.Invoke();
         entered.Invoke();
     }
+    public override bool ActivateState(State childToActivate)
+    {
+        if (childToActivate != this) return false;
+        Activate();
+        return true;
+    }
+
+    public override bool CanAddChild(State child) => false;
+
     public override void Deactivate()
     {
         if (!isActive) return;
@@ -30,13 +32,10 @@ public class AtomicState : State
         exited.Invoke();
     }
 
-    public override void RequestActivationFromChild(State requestingState)
-    {
-        Debug.LogError($"Trying to request activation to {name} atomic state as if it were a parent state");
-    }
-
     public override void Update(float deltaTime)
     {
+        if (!isActive) return;
+        Debug.Log($"Updating {name}");
     }
     #endregion
 }

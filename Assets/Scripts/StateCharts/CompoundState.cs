@@ -1,34 +1,36 @@
 using System;
 using System.Collections.Generic;
 using StateCharts;
+using Sirenix.Serialization;
 using UnityEngine;
 
 public class CompoundState : State
 {
+    [OdinSerialize]
     public State initialState;
+    [OdinSerialize]
     public State activeState;
 
-    #region Constructors
-    public CompoundState(string name = null, State parent = null, State initialState = null, HashSet<State> children = null, Action onEnterAction = null, Action onExitAction = null, StateChart stateChart = null)
-        : base(name, parent, children, onEnterAction, onExitAction, stateChart)
-    {
-        if (initialState != null)
-        {
-            AddChild(initialState);
-            SetInitialState(initialState);
-        }
-    }
-    #endregion
-
+    public CompoundState(string? name, Action onEnterAction = null, Action onExitAction = null) : base(name, onEnterAction, onExitAction) { }
     public void AddInitialState(State initialState)
     {
         Debug.Log($"Adding new state {initialState.name}");
-        bool success = AddChild(initialState);
-        Debug.Log($"Has succeded? {success}");
-        SetInitialState(initialState);
+        if (tree != null)
+        {
+            bool success = tree.AddChild(this, initialState);
+            Debug.Log($"Has succeeded? {success}");
+            SetInitialState(initialState);
+        }
     }
     public void SetInitialState(State state)
     {
+        if (tree == null)
+        {
+            Debug.LogError($"Tree is null, cannot set initial state");
+            return;
+        }
+
+        var children = tree.GetChildren(this);
         if (state == null || !children.Contains(state))
         {
             Debug.LogError($"Initial state must be a child of the compound state.");
@@ -41,7 +43,8 @@ public class CompoundState : State
     public override void FixedUpdate(float fixedDeltaTime)
     {
         if (!isActive) return;
-        foreach (var state in children)
+        if (tree == null) return;
+        foreach (var state in tree.GetChildren(this))
         {
             state.FixedUpdate(fixedDeltaTime);
         }
@@ -54,7 +57,8 @@ public class CompoundState : State
     public override void LateUpdate(float deltaTime)
     {
         if (!isActive) return;
-        foreach (var state in children)
+        if (tree == null) return;
+        foreach (var state in tree.GetChildren(this))
         {
             state.LateUpdate(deltaTime);
         }
@@ -68,47 +72,40 @@ public class CompoundState : State
         isActive = true;
         onEnterAction?.Invoke();
         entered.Invoke();
-        ActivateChild(initialState);
+        ActivateState(initialState);
     }
     public override void Deactivate()
     {
         if (!isActive) return;
         isActive = false;
-        foreach (var state in children)
+        if (tree != null)
         {
-            state.Deactivate();
+            foreach (var state in tree.GetChildren(this))
+            {
+                state.Deactivate();
+            }
         }
         activeState = null;
         onEnterAction?.Invoke();
         exited.Invoke();
     }
 
-    public override void RequestActivationFromChild(State requestingState)
+    public override bool ActivateState(State stateToActivate)
     {
-        if (!stateChart.IsAncestorOf(this, requestingState))
-        {
-            Debug.LogError($"Requesting activation from {requestingState.name} to {name} compound state, but the requesting state is not an ancestor of this compound state.");
-            return;
-        }
-        if (isActive)
-        {
-            ActivateChild(requestingState);
-            return;
-        }
-        parent.RequestActivationFromChild(this);
-    }
+        if (tree == null) return false;
 
-    private void ActivateChild(State childToActivate)
-    {
-        foreach (State child in children)
+        bool stateActivated = false;
+        foreach (State child in tree.GetChildren(this))
         {
-            if (child == childToActivate)
+            if (child.ActivateState(stateToActivate))
             {
-                child.Activate();
+                stateActivated = true;
                 activeState = child;
+                continue;
             }
-            else child.Deactivate();
+            child.Deactivate();
         }
+        return stateActivated;
     }
 
     #endregion

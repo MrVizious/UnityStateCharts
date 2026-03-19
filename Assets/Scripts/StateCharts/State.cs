@@ -1,13 +1,18 @@
 using System;
 using System.Collections.Generic;
 using NodeTree;
+using Sirenix.OdinInspector;
+using Sirenix.Serialization;
 using UnityEngine;
 using UnityEngine.Events;
 namespace StateCharts
 {
+    [System.Serializable]
     public abstract class State : Node<State>
     {
         #region Properties
+        [OdinSerialize]
+        [ShowInInspector]
         private string _name;
         public override string name
         {
@@ -15,41 +20,36 @@ namespace StateCharts
             {
                 if (_name == null)
                 {
-                    _name = GetType().Name;
+                    _name = GetType().Name + GetHashCode();
                 }
                 return _name;
             }
             protected set => _name = value;
         }
+        [OdinSerialize]
+        [ShowInInspector]
         public bool isActive { get; protected set; } = false;
+        [OdinSerialize]
         protected Action onEnterAction = null;
+        [OdinSerialize]
         protected Action onExitAction = null;
+        [OdinSerialize]
         public UnityEvent entered = new();
+        [OdinSerialize]
         public UnityEvent exited = new();
-        private StateChart _stateChart;
-        public StateChart stateChart
-        {
-            get
-            {
-                if (_stateChart != null) return _stateChart;
-                if (parent != null) _stateChart = parent.stateChart;
-                return _stateChart;
-            }
-            set => _stateChart = value;
-        }
+        [OdinSerialize]
+        [ShowInInspector]
+        public StateChart stateChart => tree as StateChart;
+
 
         #endregion
 
         #region Constructors
-        public State() { }
-        public State(string? name = null, State parent = null, HashSet<State> children = null, Action onEnterAction = null, Action onExitAction = null, StateChart stateChart = null)
+        public State(string? name = null, Action onEnterAction = null, Action onExitAction = null)
         {
             if (name != null) this.name = name;
-            if (parent != null) SetParent(parent);
-            if (children != null) AddChildren(children);
             this.onEnterAction = onEnterAction;
             this.onExitAction = onExitAction;
-            this.stateChart = stateChart;
         }
         #endregion
 
@@ -72,28 +72,25 @@ namespace StateCharts
         #endregion
 
         #region Enter and Exit Methods
-        public virtual void OnEnter()
+        protected virtual void OnEnter()
         {
             onEnterAction?.Invoke();
         }
-        public virtual void OnExit()
+        protected virtual void OnExit()
         {
             onExitAction?.Invoke();
         }
         #endregion
 
         #region Activation Methods
+        public abstract bool ActivateState(State stateToActivate);
         public abstract void Activate();
         public abstract void Deactivate();
-        public void RequestActivation()
-        {
-            if (isActive) return;
-            if (parent != null)
-            {
-                parent.RequestActivationFromChild(this);
-            }
-        }
-        public abstract void RequestActivationFromChild(State requestingState);
+        #endregion
+
+        #region Child Methods
+        public virtual bool CanAddChild(State child) => true;
+
         #endregion
     }
 }

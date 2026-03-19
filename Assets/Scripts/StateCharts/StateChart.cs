@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace StateCharts
 {
+    [System.Serializable]
     public class StateChart : Tree<State>
     {
         protected HashSet<AtomicState> activeAtomicStates = new();
@@ -30,13 +31,21 @@ namespace StateCharts
         }
         public StateChart(State entryState = null)
         {
-            entryNode = entryState;
-            if (entryNode == null) return;
-            entryNode.SetTree(this);
+            if (entryState != null) SetEntryNode(entryState);
         }
         public void Activate()
         {
             entryNode.Activate();
+        }
+        public override bool AddChild(State parent, State child)
+        {
+            if (parent == null || child == null)
+            {
+                Debug.LogError($"Cannot add child to state chart. Parent or child is null.");
+                return false;
+            }
+            if (!parent.CanAddChild(child)) return false;
+            return base.AddChild(parent, child);
         }
     }
 }

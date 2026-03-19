@@ -9,16 +9,17 @@ public class ParallelState : State
     public override void FixedUpdate(float fixedDeltaTime)
     {
         if (!isActive) return;
-        foreach (var state in children)
+        if (tree == null) return;
+        foreach (var state in tree.GetChildren(this))
         {
             state.FixedUpdate(fixedDeltaTime);
         }
     }
     public override void Update(float deltaTime)
     {
-        Debug.Log($"Updating {name}");
         if (!isActive) return;
-        foreach (var state in children)
+        if (tree == null) return;
+        foreach (var state in tree.GetChildren(this))
         {
             state.Update(deltaTime);
         }
@@ -26,7 +27,8 @@ public class ParallelState : State
     public override void LateUpdate(float deltaTime)
     {
         if (!isActive) return;
-        foreach (var state in children)
+        if (tree == null) return;
+        foreach (var state in tree.GetChildren(this))
         {
             state.LateUpdate(deltaTime);
         }
@@ -34,9 +36,7 @@ public class ParallelState : State
     #endregion
 
     #region Constructors
-    public ParallelState() { }
-    public ParallelState(string? name = null, State parent = null, HashSet<State> children = null, Action onEnterAction = null, Action onExitAction = null, StateChart stateChart = null)
-        : base(name, parent, children, onEnterAction, onExitAction, stateChart) { }
+    public ParallelState(string? name, Action onEnterAction = null, Action onExitAction = null) : base(name, onEnterAction, onExitAction) { }
     #endregion
 
     #region Activation Methods
@@ -46,30 +46,39 @@ public class ParallelState : State
         onEnterAction?.Invoke();
         entered.Invoke();
         isActive = true;
-        foreach (var state in children)
+        if (tree != null)
         {
-            state.Activate();
+            foreach (var state in tree.GetChildren(this))
+            {
+                state.Activate();
+            }
         }
     }
     public override void Deactivate()
     {
         if (!isActive) return;
         isActive = false;
-        foreach (var state in children)
+        if (tree != null)
         {
-            state.Deactivate();
+            foreach (var state in tree.GetChildren(this))
+            {
+                state.Deactivate();
+            }
         }
         onExitAction?.Invoke();
         exited.Invoke();
     }
 
-    public override void RequestActivationFromChild(State requestingState)
+
+    public override bool ActivateState(State stateToActivate)
     {
-        if (isActive)
+        if (!stateChart.IsAncestorOf(this, stateToActivate)) return false;
+        foreach (var child in tree.GetChildren(this))
         {
-            Debug.LogError($"Requesting activation from {requestingState.name} to {name} parallel state, but it's already active. Parallel states should not receive activation requests from their children since they activate all children at once.");
+            child.ActivateState(stateToActivate);
         }
-        parent.RequestActivationFromChild(this);
+        return true;
     }
+
     #endregion
 }
