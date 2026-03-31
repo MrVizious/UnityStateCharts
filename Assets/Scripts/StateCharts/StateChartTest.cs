@@ -9,13 +9,13 @@ public class StateChartTest : MonoBehaviour
 {
     [OdinSerialize, ShowInInspector]
     private StateChart stateChart;
-    ParallelState rootState = new ParallelState("Root State");
-    CompoundState stateA = new CompoundState("State A");
-    AtomicState stateE = new AtomicState("State E");
-    AtomicState stateF = new AtomicState("State F");
-    ParallelState stateB = new ParallelState("State B");
-    AtomicState stateC = new AtomicState("State C");
-    AtomicState stateD = new AtomicState("State D");
+    CompoundState rootState = new("Root State");
+    CompoundState stateA = new("State A");
+    AtomicState stateE = new("State E");
+    AtomicState stateF = new("State F");
+    ParallelState stateB = new("State B");
+    AtomicState stateC = new("State C");
+    AtomicState stateD = new("State D");
     void Start()
     {
         stateChart = new StateChart(rootState);
@@ -23,6 +23,7 @@ public class StateChartTest : MonoBehaviour
         // Children of Root
         stateChart.AddChild(rootState, stateA);
         stateChart.AddChild(rootState, stateB);
+        rootState.SetInitialState(stateA);
 
         // Children of A
         stateChart.AddChild(stateA, stateE);
@@ -41,11 +42,17 @@ public class StateChartTest : MonoBehaviour
         stateChart.Update(Time.deltaTime);
     }
 
+    public void ChangeToE(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+        {
+            stateChart.entryNode.ActivateState(stateE);
+        }
+    }
     public void ChangeToF(InputAction.CallbackContext context)
     {
         if (context.performed)
         {
-            Debug.Log($"Activating state F", this);
             stateChart.entryNode.ActivateState(stateF);
         }
     }
@@ -53,7 +60,6 @@ public class StateChartTest : MonoBehaviour
     {
         if (context.performed)
         {
-            Debug.Log($"Activating state D", this);
             stateChart.entryNode.ActivateState(stateD);
         }
     }

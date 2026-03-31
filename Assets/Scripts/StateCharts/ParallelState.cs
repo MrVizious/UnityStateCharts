@@ -43,9 +43,9 @@ public class ParallelState : State
     public override void Activate()
     {
         if (isActive) return;
+        isActive = true;
         onEnterAction?.Invoke();
         entered.Invoke();
-        isActive = true;
         if (tree != null)
         {
             foreach (var state in tree.GetChildren(this))
@@ -54,6 +54,25 @@ public class ParallelState : State
             }
         }
     }
+
+    public override bool ActivateState(State stateToActivate)
+    {
+        if (!stateChart.IsAncestorOf(this, stateToActivate)) return false;
+        isActive = true;
+        foreach (var child in tree.GetChildren(this))
+        {
+            if (tree.IsAncestorOf(child, stateToActivate))
+            {
+                child.ActivateState(stateToActivate);
+            }
+            else
+            {
+                child.Activate();
+            }
+        }
+        return true;
+    }
+
     public override void Deactivate()
     {
         if (!isActive) return;
@@ -68,17 +87,5 @@ public class ParallelState : State
         onExitAction?.Invoke();
         exited.Invoke();
     }
-
-
-    public override bool ActivateState(State stateToActivate)
-    {
-        if (!stateChart.IsAncestorOf(this, stateToActivate)) return false;
-        foreach (var child in tree.GetChildren(this))
-        {
-            child.ActivateState(stateToActivate);
-        }
-        return true;
-    }
-
     #endregion
 }

@@ -14,11 +14,9 @@ public class CompoundState : State
     public CompoundState(string? name, Action onEnterAction = null, Action onExitAction = null) : base(name, onEnterAction, onExitAction) { }
     public void AddInitialState(State initialState)
     {
-        Debug.Log($"Adding new state {initialState.name}");
         if (tree != null)
         {
             bool success = tree.AddChild(this, initialState);
-            Debug.Log($"Has succeeded? {success}");
             SetInitialState(initialState);
         }
     }
@@ -26,14 +24,12 @@ public class CompoundState : State
     {
         if (tree == null)
         {
-            Debug.LogError($"Tree is null, cannot set initial state");
             return;
         }
 
         var children = tree.GetChildren(this);
         if (state == null || !children.Contains(state))
         {
-            Debug.LogError($"Initial state must be a child of the compound state.");
             return;
         }
         initialState = state;
@@ -72,8 +68,44 @@ public class CompoundState : State
         isActive = true;
         onEnterAction?.Invoke();
         entered.Invoke();
-        ActivateState(initialState);
+        foreach (State child in tree.GetChildren(this))
+        {
+            if (child == initialState)
+            {
+                child.Activate();
+                activeState = child;
+            }
+            else
+            {
+                child.Deactivate();
+            }
+        }
     }
+
+    public override bool ActivateState(State stateToActivate)
+    {
+        if (tree == null) return false;
+        if (!tree.IsAncestorOf(this, stateToActivate))
+        {
+            return false;
+        }
+        isActive = true;
+        foreach (State child in tree.GetChildren(this))
+        {
+            bool isChildAncestorOfStateToActivate = tree.IsAncestorOf(child, stateToActivate);
+            if (isChildAncestorOfStateToActivate)
+            {
+                child.ActivateState(stateToActivate);
+                activeState = child;
+            }
+            else
+            {
+                child.Deactivate();
+            }
+        }
+        return true;
+    }
+
     public override void Deactivate()
     {
         if (!isActive) return;
@@ -86,27 +118,8 @@ public class CompoundState : State
             }
         }
         activeState = null;
-        onEnterAction?.Invoke();
+        onExitAction?.Invoke();
         exited.Invoke();
     }
-
-    public override bool ActivateState(State stateToActivate)
-    {
-        if (tree == null) return false;
-
-        bool stateActivated = false;
-        foreach (State child in tree.GetChildren(this))
-        {
-            if (child.ActivateState(stateToActivate))
-            {
-                stateActivated = true;
-                activeState = child;
-                continue;
-            }
-            child.Deactivate();
-        }
-        return stateActivated;
-    }
-
     #endregion
 }
