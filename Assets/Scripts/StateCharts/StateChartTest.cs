@@ -15,7 +15,9 @@ public class StateChartTest : MonoBehaviour
     AtomicState stateF = new("State F");
     ParallelState stateB = new("State B");
     AtomicState stateC = new("State C");
-    AtomicState stateD = new("State D");
+    CompoundState stateD = new("State D");
+    AtomicState stateG = new("State G");
+    AtomicState stateH = new("State H");
     void Start()
     {
         stateChart = new StateChart(rootState);
@@ -34,6 +36,9 @@ public class StateChartTest : MonoBehaviour
         stateChart.AddChild(stateB, stateC);
         stateChart.AddChild(stateB, stateD);
 
+        stateChart.AddChild(stateD, stateG);
+        stateChart.AddChild(stateD, stateH);
+        stateD.SetInitialState(stateG);
         stateChart.Activate();
     }
 
@@ -56,11 +61,18 @@ public class StateChartTest : MonoBehaviour
             stateChart.entryNode.ActivateState(stateF);
         }
     }
-    public void ChangeToD(InputAction.CallbackContext context)
+    public void ChangeToG(InputAction.CallbackContext context)
     {
         if (context.performed)
         {
-            stateChart.entryNode.ActivateState(stateD);
+            stateChart.entryNode.ActivateState(stateG);
+        }
+    }
+    public void ChangeToH(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+        {
+            stateChart.entryNode.ActivateState(stateH);
         }
     }
 
